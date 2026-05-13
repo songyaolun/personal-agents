@@ -1,31 +1,29 @@
-from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, TextBlock, query
+from anthropic import Anthropic
 
-from a_share_analyst.config import build_sdk_env, load_agent_config
+from a_share_analyst.config import load_agent_config
 from a_share_analyst.prompts import BASE_PROMPT
 
 
-async def ask_a_share_analyst(question: str) -> str:
-    trimmed_question = question.strip()
-
-    if not trimmed_question:
+def ask_a_share_analyst(messages: list[dict[str, str]]) -> str:
+    if not messages:
         return "请输入要分析的问题。"
 
     config = load_agent_config()
-    answer_parts: list[str] = []
+    client = Anthropic(
+        api_key=config.anthropic_api_key,
+        base_url=config.anthropic_base_url,
+    )
 
-    async for message in query(
-        prompt=trimmed_question,
-        options=ClaudeAgentOptions(
-            allowed_tools=[],
-            max_turns=1,
-            model=config.model,
-            system_prompt=BASE_PROMPT,
-            env=build_sdk_env(config),
-        ),
-    ):
-        if isinstance(message, AssistantMessage):
-            for block in message.content:
-                if isinstance(block, TextBlock):
-                    answer_parts.append(block.text)
+    response = client.messages.create(
+        model=config.model,
+        max_tokens=65536,
+        system=BASE_PROMPT,
+        messages=messages,
+    )
 
-    return "\n".join(answer_parts).strip() or "没有收到有效回复。"
+    texts = []
+    for block in response.content:
+        if hasattr(block, "text"):
+            texts.append(block.text)
+
+    return "\n".join(texts).strip() or "没有收到有效回复。"
