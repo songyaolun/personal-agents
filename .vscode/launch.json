@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+  "inputs": [
+    {
+      "id": "agentDir",
+      "type": "pickString",
+      "description": "选择要调试的 Agent",
+      "options": [
+        "a-share-analyst"
+      ],
+      "default": "a-share-analyst"
+    },
+    {
+      "id": "agentModule",
+      "type": "pickString",
+      "description": "选择 Agent 模块名",
+      "options": [
+        "a_share_analyst"
+      ],
+      "default": "a_share_analyst"
+    }
+  ],
+  "configurations": [
+    {
+      "name": "Debug Agent",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "${input:agentModule}.cli",
+      "cwd": "${workspaceFolder}/agents/${input:agentDir}",
+      "python": "${workspaceFolder}/agents/${input:agentDir}/.venv/bin/python",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/agents/${input:agentDir}/src"
+      }
+    }
+  ]
+}
