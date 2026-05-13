@@ -41,13 +41,18 @@ def main() -> None:
         add_message(messages, "user", normalized_question, log_file)
 
         try:
-            answer = ask_a_share_analyst(messages)
+            print("\nA-Share Analyst：")
+            chunks = []
+            for chunk in ask_a_share_analyst(messages):
+                print(chunk, end="", flush=True)
+                chunks.append(chunk)
+            print()
+            answer = "".join(chunks)
         except Exception as e:
             log_error(e, log_file)
             print(f"\n发生错误：{e}")
             continue
         add_message(messages, "assistant", answer, log_file)
-        print(f"\nA-Share Analyst：\n{answer}")
 
 
 if __name__ == "__main__":
