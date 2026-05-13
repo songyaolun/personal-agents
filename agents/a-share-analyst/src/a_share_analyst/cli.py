@@ -1,6 +1,28 @@
+import datetime
+import traceback
+from pathlib import Path
+
 from a_share_analyst.agent import ask_a_share_analyst
 
 EXIT_COMMANDS = {"exit", "quit", "q"}
+
+
+def _session_log_path() -> Path:
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    return log_dir / f"session_{timestamp}.log"
+
+
+def add_message(messages: list[dict[str, str]], role: str, content: str, log_file: Path) -> None:
+    messages.append({"role": role, "content": content})
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write(f"[{role}] {content}\n\n")
+
+
+def log_error(error: Exception, log_file: Path) -> None:
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write(f"[error] {type(error).__name__}: {error}\n{traceback.format_exc()}\n\n")
 
 
 def main() -> None:
@@ -8,6 +30,7 @@ def main() -> None:
     print("输入问题开始分析，输入 exit / quit / q 退出。")
 
     messages: list[dict[str, str]] = []
+    log_file = _session_log_path()
 
     while True:
         question = input("\n >>input：")
@@ -15,10 +38,15 @@ def main() -> None:
 
         if normalized_question.lower() in EXIT_COMMANDS:
             return
-        messages.append({"role": "user", "content": normalized_question})
+        add_message(messages, "user", normalized_question, log_file)
 
-        answer = ask_a_share_analyst(messages)
-        messages.append({"role": "assistant", "content": answer})
+        try:
+            answer = ask_a_share_analyst(messages)
+        except Exception as e:
+            log_error(e, log_file)
+            print(f"\n发生错误：{e}")
+            continue
+        add_message(messages, "assistant", answer, log_file)
         print(f"\nA-Share Analyst：\n{answer}")
 
 
